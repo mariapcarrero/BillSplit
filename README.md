@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bill Split Pro
 
-## Getting Started
+Split a bill, settle up with the minimum number of transfers, and share the
+result via a link — no account, no database.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js 16** (App Router) + **React 19** + **TypeScript**
+- **Tailwind CSS v4** for styling, **lucide-react** for icons
+- **Zod** for schema validation at every API boundary
+- **Vitest** + **React Testing Library** for tests
+- **OpenAI** (`gpt-4o-mini`, structured outputs) to parse a natural-language
+  bill description into line items
+
+## How it works
+
+- Bill state lives entirely on the client (`useReducer`), no server session.
+- `POST /api/settle` computes balances and a minimized set of transfers
+  (greedy debt simplification) from a Zod-validated bill payload — pure,
+  unit-tested logic in [`lib/settle.ts`](lib/settle.ts).
+- `POST /api/ai-parse` turns free text like *"Ana paid $40 for pizza, split
+  with Leo"* into structured items using OpenAI structured outputs, validated
+  against the same Zod schema as manual input.
+- "Copy share link" encodes the whole bill as a base64url token in the URL
+  (`lib/share.ts`) — `/s/[token]` decodes and renders it server-side, with
+  zero backend storage.
+
+```
+app/
+  page.tsx              editor entry point
+  s/[token]/page.tsx     read-only shared view (server component)
+  api/settle/route.ts    settle-up Route Handler
+  api/ai-parse/route.ts  AI parsing Route Handler
+components/               BillEditor, PersonList, BillForm, Results, ShareButton
+lib/
+  types.ts / schema.ts    domain types + Zod schemas
+  settle.ts               pure settle-up algorithm
+  share.ts                URL token encode/decode
+  billReducer.ts          client-side bill state machine
+tests/settle.test.ts       unit tests for the settle-up logic
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+cp .env.example .env.local   # add OPENAI_API_KEY to enable AI parsing
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The app works fully without `OPENAI_API_KEY` — only the "Parse with AI" input
+is disabled server-side; manual bill entry is unaffected.
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev      # start the dev server
+npm run build    # production build
+npm run lint     # eslint
+npm run test     # vitest (single run)
+npm run format   # prettier --write
+```
