@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { aiParseRequestSchema, aiParseResponseSchema } from "@/lib/schema";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { normalizePercentages } from "@/lib/settle";
 
 const MODEL = "gpt-4o-mini";
 
@@ -52,7 +53,13 @@ export async function POST(request: Request) {
           content:
             "You convert a natural-language bill description into structured line items. " +
             "Use only the given person ids for paidBy and splitAmong. " +
-            "If the split isn't stated explicitly, split among everyone mentioned or, if nobody is mentioned, everyone in the list.",
+            "If the split isn't stated explicitly, split among everyone mentioned or, if nobody is mentioned, everyone in the list. " +
+            'If the description gives an uneven split — percentages ("47% Maria, 53% Mateo"), ' +
+            'a ratio ("60/40"), or a relative amount ("twice as much", "double") — set splitMode ' +
+            'to "percentage" and splitPercentages to one { personId, share } entry per person in ' +
+            "splitAmong. Those numbers don't need to add up to exactly 100 (e.g. 47 and 53 is fine); " +
+            'just capture the relative proportions. Otherwise set splitMode to "equal" and ' +
+            "splitPercentages to null.",
         },
         {
           role: "user",
@@ -68,7 +75,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not parse the description." }, { status: 422 });
     }
 
-    return NextResponse.json(result);
+    const items = result.items.map(({ splitMode, splitPercentages, ...item }) => {
+      if (splitMode !== "percentage") return item;
+
+      const weights = Object.fromEntries(
+        (splitPercentages ?? []).map(({ personId, share }) => [personId, share]),
+      );
+      return {
+        ...item,
+        splitMode: "percentage" as const,
+        splitPercentages: normalizePercentages(item.splitAmong, weights),
+      };
+    });
+
+    return NextResponse.json({ items });
   } catch (error) {
     console.error("AI parse failed", error);
     return NextResponse.json({ error: "AI parsing failed." }, { status: 502 });

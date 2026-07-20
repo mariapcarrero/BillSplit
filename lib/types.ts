@@ -3,12 +3,18 @@ export type Person = {
   name: string;
 };
 
+export type SplitMode = "equal" | "percentage";
+
 export type BillItem = {
   id: string;
   description: string;
   amount: number;
   paidBy: string;
   splitAmong: string[];
+  /** Defaults to "equal" when omitted. */
+  splitMode?: SplitMode;
+  /** personId -> percent (0-100), required when splitMode is "percentage". */
+  splitPercentages?: Record<string, number>;
 };
 
 export type Bill = {

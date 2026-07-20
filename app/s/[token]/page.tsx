@@ -19,7 +19,7 @@ export default async function SharedBillPage({ params }: PageProps) {
         <p className="text-zinc-600 dark:text-zinc-400">This share link is invalid or corrupted.</p>
         <Link
           href="/"
-          className="text-sm font-medium text-indigo-600 underline underline-offset-4 hover:text-indigo-500"
+          className="text-sm font-medium text-red-600 underline underline-offset-4 hover:text-red-500"
         >
           Start a new bill
         </Link>
@@ -34,16 +34,16 @@ export default async function SharedBillPage({ params }: PageProps) {
       <div className="w-full max-w-2xl space-y-5">
         <header className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white/70 px-5 py-4 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/60">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white">
               <Receipt size={16} />
             </span>
-            <h1 className="truncate text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+            <h1 className="truncate font-serif text-2xl font-normal text-zinc-900 italic dark:text-zinc-50">
               {bill.title}
             </h1>
           </div>
           <Link
             href="/"
-            className="shrink-0 rounded-lg px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-500/10"
+            className="shrink-0 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
           >
             New bill
           </Link>
@@ -62,7 +62,7 @@ export default async function SharedBillPage({ params }: PageProps) {
                 <span className="text-zinc-700 dark:text-zinc-200">
                   {item.description || "Untitled item"}
                 </span>
-                <span className="font-medium text-zinc-900 tabular-nums dark:text-zinc-50">
+                <span className="font-mono font-medium text-zinc-900 tabular-nums dark:text-zinc-50">
                   ${item.amount.toFixed(2)}
                 </span>
               </li>

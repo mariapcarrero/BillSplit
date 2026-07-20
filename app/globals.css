@@ -1,22 +1,25 @@
 @import "tailwindcss";
 
+/* Switches Tailwind's `dark:` variant from prefers-color-scheme to the
+   `.dark` class toggled by the theme script / ThemeToggle. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f7f7f8;
   --foreground: #18181b;
 }
 
+.dark {
+  --background: #0a0a0b;
+  --foreground: #f4f4f5;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0b;
-    --foreground: #f4f4f5;
-  }
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
 }
 
 body {
@@ -26,7 +29,7 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, indigo 30%, transparent);
+  background: color-mix(in srgb, #dc2626 30%, transparent);
 }
 
 input[type="number"]::-webkit-outer-spin-button,

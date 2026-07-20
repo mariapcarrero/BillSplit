@@ -1,4 +1,4 @@
-import { ArrowRight, PartyPopper, Receipt } from "lucide-react";
+import { ArrowRight, PartyPopper, Receipt, TriangleAlert } from "lucide-react";
 import type { Person, SettleResult } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { cn } from "@/lib/cn";
@@ -7,12 +7,13 @@ type ResultsProps = {
   people: Person[];
   result: SettleResult | null;
   loading?: boolean;
+  emptyMessage?: string;
 };
 
 const formatMoney = (amount: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Math.abs(amount));
 
-export function Results({ people, result, loading }: ResultsProps) {
+export function Results({ people, result, loading, emptyMessage }: ResultsProps) {
   const nameFor = (personId: string) => people.find((p) => p.id === personId)?.name ?? "?";
 
   if (loading) {
@@ -26,10 +27,13 @@ export function Results({ people, result, loading }: ResultsProps) {
   }
 
   if (!result) {
+    const Icon = emptyMessage ? TriangleAlert : Receipt;
     return (
       <div className="flex flex-col items-center gap-2 py-6 text-center">
-        <Receipt size={22} className="text-zinc-300 dark:text-zinc-700" />
-        <p className="text-sm text-zinc-500">Add people and items to see the split.</p>
+        <Icon size={22} className="text-zinc-300 dark:text-zinc-700" />
+        <p className="text-sm text-zinc-500">
+          {emptyMessage ?? "Add people and items to see the split."}
+        </p>
       </div>
     );
   }
@@ -40,29 +44,45 @@ export function Results({ people, result, loading }: ResultsProps) {
         <h2 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
           Balances
         </h2>
-        <ul className="mt-2.5 space-y-1.5">
-          {result.balances.map((b) => (
-            <li key={b.personId} className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
-                <Avatar name={nameFor(b.personId)} />
-                {nameFor(b.personId)}
-              </span>
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums",
-                  b.amount > 0.005 &&
-                    "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-                  b.amount < -0.005 &&
-                    "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400",
-                  Math.abs(b.amount) <= 0.005 &&
-                    "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
-                )}
-              >
-                {b.amount > 0.005 ? "+" : b.amount < -0.005 ? "−" : ""}
-                {formatMoney(b.amount)}
-              </span>
-            </li>
-          ))}
+        <ul className="mt-2.5 space-y-2.5">
+          {(() => {
+            const maxAbs = Math.max(1, ...result.balances.map((b) => Math.abs(b.amount)));
+            return result.balances.map((b) => (
+              <li key={b.personId}>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+                    <Avatar name={nameFor(b.personId)} />
+                    {nameFor(b.personId)}
+                  </span>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 font-mono text-xs font-semibold tabular-nums",
+                      b.amount > 0.005 &&
+                        "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+                      b.amount < -0.005 &&
+                        "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
+                      Math.abs(b.amount) <= 0.005 &&
+                        "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
+                    )}
+                  >
+                    {b.amount > 0.005 ? "+" : b.amount < -0.005 ? "−" : ""}
+                    {formatMoney(b.amount)}
+                  </span>
+                </div>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all",
+                      b.amount > 0.005 && "bg-emerald-500",
+                      b.amount < -0.005 && "bg-red-500",
+                      Math.abs(b.amount) <= 0.005 && "bg-zinc-300 dark:bg-zinc-600",
+                    )}
+                    style={{ width: `${Math.round((Math.abs(b.amount) / maxAbs) * 100)}%` }}
+                  />
+                </div>
+              </li>
+            ));
+          })()}
         </ul>
       </div>
 
@@ -91,7 +111,7 @@ export function Results({ people, result, loading }: ResultsProps) {
                   <Avatar name={nameFor(t.to)} />
                   {nameFor(t.to)}
                 </span>
-                <span className="ml-auto font-semibold text-zinc-900 tabular-nums dark:text-zinc-50">
+                <span className="ml-auto font-mono font-semibold text-zinc-900 tabular-nums dark:text-zinc-50">
                   {formatMoney(t.amount)}
                 </span>
               </li>

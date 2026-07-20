@@ -24,7 +24,7 @@ export function ShareButton({ bill }: { bill: Bill }) {
       className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-colors disabled:opacity-50 ${
         copied
           ? "bg-emerald-600 text-white"
-          : "bg-indigo-600 text-white hover:bg-indigo-500 active:bg-indigo-700"
+          : "bg-red-600 text-white hover:bg-red-500 active:bg-red-700"
       }`}
     >
       {copied ? <Check size={15} /> : <Link2 size={15} />}
