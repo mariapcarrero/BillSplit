@@ -3,6 +3,9 @@
 Split a bill, settle up with the minimum number of transfers, and share the
 result via a link — no account, no database.
 
+## Website url
+https://bill-split-blush.vercel.app
+
 ## Stack
 
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**
