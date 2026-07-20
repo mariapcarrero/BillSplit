@@ -2,8 +2,23 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { aiParseRequestSchema, aiParseResponseSchema } from "@/lib/schema";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const MODEL = "gpt-4o-mini";
+
+// Demo-project cost guardrails — bump these if you actually need more headroom.
+const PER_IP_LIMIT = 5;
+const PER_IP_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const GLOBAL_LIMIT = 30;
+const GLOBAL_WINDOW_MS = 24 * 60 * 60 * 1000; // 1 day
+
+function rateLimitResponse(resetAt: number) {
+  const retryAfterSeconds = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
+  return NextResponse.json(
+    { error: "Rate limit exceeded. Try again later." },
+    { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
+  );
+}
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -16,6 +31,13 @@ export async function POST(request: Request) {
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json({ error: "AI parsing is not configured." }, { status: 503 });
   }
+
+  const ip = getClientIp(request);
+  const perIp = checkRateLimit(`ai-parse:ip:${ip}`, PER_IP_LIMIT, PER_IP_WINDOW_MS);
+  if (!perIp.allowed) return rateLimitResponse(perIp.resetAt);
+
+  const global = checkRateLimit("ai-parse:global", GLOBAL_LIMIT, GLOBAL_WINDOW_MS);
+  if (!global.allowed) return rateLimitResponse(global.resetAt);
 
   const { text, people } = parsed.data;
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
